@@ -198,8 +198,8 @@ function StickyNoteCard({ note, onDelete }: { note: StickyNote; onDelete: (id: s
           value={content}
           onChange={(e) => handleContentChange(e.target.value)}
           placeholder="Escribe tu idea..."
-          className="w-full bg-transparent border-none outline-none resize-none font-sans text-sm leading-relaxed"
-          style={{ color: '#252e12', minHeight: 80, cursor: 'text' }}
+          className="w-full bg-transparent border-none outline-none resize-none font-sans text-sm leading-relaxed sticky-note-textarea"
+          style={{ color: '#1a1a0e', minHeight: 80, cursor: 'text', colorScheme: 'light' }}
           rows={4}
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}

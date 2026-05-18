@@ -209,6 +209,15 @@ body::before {
   background: rgba(200, 168, 74, 0.22);
 }
 
+/* Sticky notes — siempre fondo claro, texto siempre oscuro */
+.sticky-note-textarea {
+  color: #1a1a0e !important;
+  color-scheme: light;
+}
+.sticky-note-textarea::placeholder {
+  color: rgba(37, 46, 18, 0.45);
+}
+
 /* Panel base */
 .panel {
   background: var(--bg-panel);
