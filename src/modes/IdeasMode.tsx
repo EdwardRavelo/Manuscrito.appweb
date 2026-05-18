@@ -179,6 +179,8 @@ function StickyNoteCard({ note, onDelete }: { note: StickyNote; onDelete: (id: s
           : '3px 5px 16px rgba(44,24,16,0.15)',
         borderRadius: 12,
         rotate: isDragging ? 2 : 0,
+        colorScheme: 'light',
+        color: '#252e12',
       }}
       transition={{ rotate: { duration: 0.15 } }}
       className="group"
@@ -197,7 +199,7 @@ function StickyNoteCard({ note, onDelete }: { note: StickyNote; onDelete: (id: s
           onChange={(e) => handleContentChange(e.target.value)}
           placeholder="Escribe tu idea..."
           className="w-full bg-transparent border-none outline-none resize-none font-sans text-sm leading-relaxed"
-          style={{ color: 'var(--text)', minHeight: 80, cursor: 'text' }}
+          style={{ color: '#252e12', minHeight: 80, cursor: 'text' }}
           rows={4}
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
@@ -207,7 +209,7 @@ function StickyNoteCard({ note, onDelete }: { note: StickyNote; onDelete: (id: s
       {/* Eliminar */}
       <button
         className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-        style={{ background: 'rgba(44,24,16,0.2)', color: 'var(--text)', fontSize: '9px' }}
+        style={{ background: 'rgba(44,24,16,0.2)', color: '#252e12', fontSize: '9px' }}
         onClick={(e) => { e.stopPropagation(); deleteStickyNote(note.id); onDelete(note.id) }}
         onMouseDown={(e) => e.stopPropagation()}
       >
