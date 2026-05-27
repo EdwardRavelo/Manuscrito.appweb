@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useProjectStore } from '@/store/projectStore'
 import { useEditorStore } from '@/store/editorStore'
@@ -31,7 +31,7 @@ const STATUS_DOT: Record<string, string> = {
 
 export default function LeftPanel() {
   const navigate = useNavigate()
-  const { documents, activeProject, addDocument } = useProjectStore()
+  const { documents, activeProject, addDocument, reorderDocuments } = useProjectStore()
   const { activeDocument, setActiveDocument, setMode } = useEditorStore()
 
   const [search, setSearch] = useState('')
@@ -57,6 +57,17 @@ export default function LeftPanel() {
     character: 'Personajes',
     note: 'Notas',
     idea: 'Ideas',
+  }
+
+  const handleGroupReorder = (type: DocumentType, reorderedGroup: Document[]) => {
+    const newDocs: Document[] = []
+    for (const t of typeOrder) {
+      if (t === type) newDocs.push(...reorderedGroup)
+      else newDocs.push(...documents.filter((d) => d.type === t))
+    }
+    const handled = new Set<DocumentType>(typeOrder)
+    documents.filter((d) => !handled.has(d.type)).forEach((d) => newDocs.push(d))
+    reorderDocuments(newDocs)
   }
 
   const handleAdd = async () => {
@@ -151,19 +162,26 @@ export default function LeftPanel() {
                   {docs.length}
                 </span>
               </div>
-              {docs.map((doc) => (
-                <DocItem
-                  key={doc.id}
-                  doc={doc}
-                  isActive={activeDocument?.id === doc.id}
-                  icon={TYPE_ICONS[doc.type]}
-                  iconColor={TYPE_COLORS[doc.type]}
-                  onSelect={() => {
-                    setActiveDocument(doc)
-                    if (doc.type === 'chapter' || doc.type === 'scene') setMode('chapters')
-                  }}
-                />
-              ))}
+              <Reorder.Group
+                axis="y"
+                values={docs}
+                onReorder={(reordered) => handleGroupReorder(type, reordered)}
+                style={{ listStyle: 'none', padding: 0, margin: 0 }}
+              >
+                {docs.map((doc) => (
+                  <DraggableDocItem
+                    key={doc.id}
+                    doc={doc}
+                    isActive={activeDocument?.id === doc.id}
+                    icon={TYPE_ICONS[doc.type]}
+                    iconColor={TYPE_COLORS[doc.type]}
+                    onSelect={() => {
+                      setActiveDocument(doc)
+                      if (doc.type === 'chapter' || doc.type === 'scene') setMode('chapters')
+                    }}
+                  />
+                ))}
+              </Reorder.Group>
             </div>
           )
         })}
@@ -286,7 +304,7 @@ export default function LeftPanel() {
   )
 }
 
-function DocItem({
+function DraggableDocItem({
   doc,
   isActive,
   icon,
@@ -299,47 +317,71 @@ function DocItem({
   iconColor: string
   onSelect: () => void
 }) {
+  const controls = useDragControls()
   const accentColor = doc.cardColor ?? 'var(--accent)'
+
   return (
-    <button
-      onClick={onSelect}
-      className="w-full text-left px-4 py-2 flex items-center gap-2.5 transition-colors group"
-      style={{
-        background: isActive ? 'var(--bg-active)' : 'transparent',
-        borderLeft: isActive ? `2px solid ${accentColor}` : '2px solid transparent',
-      }}
+    <Reorder.Item
+      value={doc}
+      dragListener={false}
+      dragControls={controls}
+      style={{ listStyle: 'none' }}
+      className="group"
     >
-      <span style={{ fontSize: '9px', color: isActive ? (doc.cardColor ?? iconColor) : 'var(--text-muted)', flexShrink: 0 }}>
-        {icon}
-      </span>
-      <div className="flex-1 min-w-0">
+      <div
+        className="w-full text-left px-2 py-2 flex items-center gap-1.5 transition-colors"
+        style={{
+          background: isActive ? 'var(--bg-active)' : 'transparent',
+          borderLeft: isActive ? `2px solid ${accentColor}` : '2px solid transparent',
+          paddingLeft: isActive ? '6px' : '8px',
+        }}
+      >
+        {/* Drag handle */}
         <span
-          className="text-xs truncate leading-snug block"
-          style={{ color: isActive ? 'var(--text)' : 'var(--text-mid)' }}
+          onPointerDown={(e) => controls.start(e)}
+          className="opacity-0 group-hover:opacity-30 hover:!opacity-70 transition-opacity cursor-grab active:cursor-grabbing touch-none flex-shrink-0"
+          style={{ color: 'var(--text-muted)', fontSize: '11px', lineHeight: 1, padding: '0 2px' }}
         >
-          {doc.title}
+          ⠿
         </span>
-        {doc.songTitle && (
-          <span
-            className="truncate block leading-tight"
-            style={{ fontSize: '10px', color: 'var(--text-muted)' }}
-          >
-            ♪ {doc.songTitle}
+
+        <button
+          onClick={onSelect}
+          className="flex-1 min-w-0 flex items-center gap-2 text-left"
+        >
+          <span style={{ fontSize: '9px', color: isActive ? (doc.cardColor ?? iconColor) : 'var(--text-muted)', flexShrink: 0 }}>
+            {icon}
           </span>
-        )}
+          <div className="flex-1 min-w-0">
+            <span
+              className="text-xs truncate leading-snug block"
+              style={{ color: isActive ? 'var(--text)' : 'var(--text-mid)' }}
+            >
+              {doc.title}
+            </span>
+            {doc.songTitle && (
+              <span
+                className="truncate block leading-tight"
+                style={{ fontSize: '10px', color: 'var(--text-muted)' }}
+              >
+                ♪ {doc.songTitle}
+              </span>
+            )}
+          </div>
+          {doc.cardColor && (
+            <span
+              className="w-1.5 h-1.5 rounded-full flex-shrink-0 opacity-50 group-hover:opacity-100 transition-opacity"
+              style={{ background: doc.cardColor }}
+            />
+          )}
+          {!doc.cardColor && (
+            <span
+              className="w-1.5 h-1.5 rounded-full flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+              style={{ background: STATUS_DOT[doc.status] ?? '#4a6b50' }}
+            />
+          )}
+        </button>
       </div>
-      {doc.cardColor && (
-        <span
-          className="w-1.5 h-1.5 rounded-full flex-shrink-0 opacity-50 group-hover:opacity-100 transition-opacity"
-          style={{ background: doc.cardColor }}
-        />
-      )}
-      {!doc.cardColor && (
-        <span
-          className="w-1.5 h-1.5 rounded-full flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-          style={{ background: STATUS_DOT[doc.status] ?? '#4a6b50' }}
-        />
-      )}
-    </button>
+    </Reorder.Item>
   )
 }

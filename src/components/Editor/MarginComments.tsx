@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion'
 import type { MarginComment, MarginCommentColor } from '@/types'
 
 const COLOR_CONFIG: Record<MarginCommentColor, { bg: string; border: string; dot: string }> = {
@@ -130,60 +130,24 @@ export default function MarginComments({ comments, onChange }: Props) {
         )}
       </AnimatePresence>
 
-      {/* Comment bubbles */}
-      <AnimatePresence>
-        {comments.map((comment) => {
-          const cfg = COLOR_CONFIG[comment.color] ?? COLOR_CONFIG.amber
-          return (
-            <motion.div
+      {/* Comment bubbles — draggables */}
+      <Reorder.Group
+        axis="y"
+        values={comments}
+        onReorder={onChange}
+        className="flex flex-col gap-2.5"
+        style={{ listStyle: 'none', padding: 0, margin: 0 }}
+      >
+        <AnimatePresence>
+          {comments.map((comment) => (
+            <CommentCard
               key={comment.id}
-              layout
-              initial={{ opacity: 0, x: 16, scale: 0.96 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 16, scale: 0.94 }}
-              transition={{ duration: 0.2 }}
-              className="rounded-xl p-3 group relative"
-              style={{ background: cfg.bg, border: `1px solid ${cfg.border}` }}
-            >
-              {/* Color dot */}
-              <div
-                className="w-2 h-2 rounded-full mb-2"
-                style={{ background: cfg.dot }}
-              />
-
-              <p
-                className="font-sans text-xs leading-relaxed"
-                style={{ color: 'var(--text-mid)', whiteSpace: 'pre-wrap' }}
-              >
-                {comment.text}
-              </p>
-
-              <p
-                className="font-mono mt-2 opacity-50"
-                style={{ fontSize: '10px', color: 'var(--text-muted)' }}
-              >
-                {new Date(comment.createdAt).toLocaleDateString('es', {
-                  day: 'numeric',
-                  month: 'short',
-                })}
-              </p>
-
-              {/* Delete */}
-              <button
-                onClick={() => remove(comment.id)}
-                className="absolute top-2 right-2 w-5 h-5 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                style={{
-                  background: 'rgba(44,24,16,0.12)',
-                  color: 'var(--text-muted)',
-                  fontSize: '9px',
-                }}
-              >
-                ✕
-              </button>
-            </motion.div>
-          )
-        })}
-      </AnimatePresence>
+              comment={comment}
+              onRemove={() => remove(comment.id)}
+            />
+          ))}
+        </AnimatePresence>
+      </Reorder.Group>
 
       {comments.length === 0 && !adding && (
         <p
@@ -194,5 +158,57 @@ export default function MarginComments({ comments, onChange }: Props) {
         </p>
       )}
     </div>
+  )
+}
+
+function CommentCard({ comment, onRemove }: { comment: MarginComment; onRemove: () => void }) {
+  const cfg = COLOR_CONFIG[comment.color] ?? COLOR_CONFIG.amber
+  const controls = useDragControls()
+
+  return (
+    <Reorder.Item
+      value={comment}
+      dragListener={false}
+      dragControls={controls}
+      initial={{ opacity: 0, x: 16, scale: 0.96 }}
+      animate={{ opacity: 1, x: 0, scale: 1 }}
+      exit={{ opacity: 0, x: 16, scale: 0.94 }}
+      transition={{ duration: 0.2 }}
+      className="rounded-xl p-3 group relative"
+      style={{ background: cfg.bg, border: `1px solid ${cfg.border}`, listStyle: 'none' }}
+    >
+      <div className="flex items-start gap-1.5">
+        {/* Drag handle */}
+        <button
+          onPointerDown={(e) => controls.start(e)}
+          className="mt-0.5 flex-shrink-0 opacity-0 group-hover:opacity-40 hover:!opacity-80 transition-opacity cursor-grab active:cursor-grabbing touch-none"
+          style={{ color: cfg.dot, fontSize: '10px', lineHeight: 1, padding: '2px 0' }}
+        >
+          ⠿
+        </button>
+
+        <div className="flex-1 min-w-0">
+          <div className="w-2 h-2 rounded-full mb-2" style={{ background: cfg.dot }} />
+          <p
+            className="font-sans text-xs leading-relaxed"
+            style={{ color: 'var(--text-mid)', whiteSpace: 'pre-wrap' }}
+          >
+            {comment.text}
+          </p>
+          <p className="font-mono mt-2 opacity-50" style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+            {new Date(comment.createdAt).toLocaleDateString('es', { day: 'numeric', month: 'short' })}
+          </p>
+        </div>
+      </div>
+
+      {/* Delete */}
+      <button
+        onClick={onRemove}
+        className="absolute top-2 right-2 w-5 h-5 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+        style={{ background: 'rgba(44,24,16,0.12)', color: 'var(--text-muted)', fontSize: '9px' }}
+      >
+        ✕
+      </button>
+    </Reorder.Item>
   )
 }

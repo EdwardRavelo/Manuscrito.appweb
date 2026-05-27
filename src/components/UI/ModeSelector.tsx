@@ -3,7 +3,6 @@ import { useEditorStore } from '@/store/editorStore'
 import type { EditorMode } from '@/types'
 
 const MODES: { id: EditorMode; label: string; icon: string }[] = [
-  { id: 'write',    label: 'Escritura', icon: '✍' },
   { id: 'chapters', label: 'Capítulos', icon: '◈' },
   { id: 'outline',  label: 'Organizar', icon: '⊞' },
   { id: 'ideas',    label: 'Ideas',     icon: '◉' },

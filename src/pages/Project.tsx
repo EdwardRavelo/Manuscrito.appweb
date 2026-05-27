@@ -18,7 +18,7 @@ export default function ProjectPage() {
   const { projectId } = useParams<{ projectId: string }>()
   const navigate = useNavigate()
   const { activeProject, setActiveProject } = useProjectStore()
-  const { mode, leftPanelOpen, rightPanelOpen, toggleLeftPanel, toggleRightPanel, darkMode, toggleDarkMode } = useEditorStore()
+  const { mode, leftPanelOpen, rightPanelOpen, focusMode, toggleLeftPanel, toggleRightPanel, toggleFocusMode, darkMode, toggleDarkMode } = useEditorStore()
 
   useEffect(() => {
     if (!projectId) return
@@ -90,6 +90,23 @@ export default function ProjectPage() {
 
         <div className="flex-1" />
 
+        {/* Focus mode toggle (solo en chapters) */}
+        {mode === 'chapters' && (
+          <button
+            onClick={toggleFocusMode}
+            title={focusMode ? 'Salir del modo foco' : 'Modo foco'}
+            className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
+            style={{
+              background: focusMode ? 'var(--bg-active)' : 'transparent',
+              color: focusMode ? 'var(--accent)' : 'var(--text-muted)',
+              border: focusMode ? '1px solid var(--accent)' : '1px solid transparent',
+              fontSize: '13px',
+            }}
+          >
+            {focusMode ? '⊡' : '⊟'}
+          </button>
+        )}
+
         {/* Auto-save indicator */}
         <div className="flex items-center gap-1.5">
           <div
@@ -130,7 +147,7 @@ export default function ProjectPage() {
       <div className="flex flex-1 overflow-hidden">
         {/* Left panel */}
         <AnimatePresence initial={false}>
-          {leftPanelOpen && (
+          {leftPanelOpen && !focusMode && (
             <motion.aside
               key="left-panel"
               initial={{ width: 0, opacity: 0 }}
@@ -162,7 +179,7 @@ export default function ProjectPage() {
 
         {/* Right panel */}
         <AnimatePresence initial={false}>
-          {rightPanelOpen && (
+          {rightPanelOpen && !focusMode && (
             <motion.aside
               key="right-panel"
               initial={{ width: 0, opacity: 0 }}

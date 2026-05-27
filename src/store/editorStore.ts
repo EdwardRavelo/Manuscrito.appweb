@@ -10,6 +10,7 @@ interface EditorState {
   activeDocument: Document | null
   leftPanelOpen: boolean
   rightPanelOpen: boolean
+  focusMode: boolean
   darkMode: boolean
   wordCount: number
   setMode: (mode: EditorMode) => void
@@ -17,6 +18,7 @@ interface EditorState {
   setWordCount: (n: number) => void
   toggleLeftPanel: () => void
   toggleRightPanel: () => void
+  toggleFocusMode: () => void
   toggleDarkMode: () => void
   // kept for backwards compat
   sidebarOpen: boolean
@@ -25,10 +27,11 @@ interface EditorState {
 }
 
 export const useEditorStore = create<EditorState>((set) => ({
-  mode: 'write',
+  mode: 'chapters',
   activeDocument: null,
   leftPanelOpen: true,
   rightPanelOpen: true,
+  focusMode: false,
   darkMode: _initDark,
   wordCount: 0,
   sidebarOpen: true,
@@ -38,6 +41,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   setWordCount: (n) => set({ wordCount: n }),
   toggleLeftPanel: () => set((s) => ({ leftPanelOpen: !s.leftPanelOpen, sidebarOpen: !s.leftPanelOpen })),
   toggleRightPanel: () => set((s) => ({ rightPanelOpen: !s.rightPanelOpen })),
+  toggleFocusMode: () => set((s) => ({ focusMode: !s.focusMode })),
   toggleDarkMode: () => set((s) => {
     const next = !s.darkMode
     document.documentElement.classList.toggle('dark', next)
