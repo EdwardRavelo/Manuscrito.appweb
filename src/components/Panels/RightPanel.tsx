@@ -3,7 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useEditorStore } from '@/store/editorStore'
 import { useProjectStore } from '@/store/projectStore'
 
+type RightTab = 'music' | 'focus' | 'stats'
+
 type PomodoroPhase = 'work' | 'short-break' | 'long-break'
+
 
 const PHASE_CONFIG: Record<PomodoroPhase, { label: string; duration: number; color: string }> = {
   work:        { label: 'Escritura',     duration: 25 * 60, color: 'var(--accent)' },
@@ -11,10 +14,8 @@ const PHASE_CONFIG: Record<PomodoroPhase, { label: string; duration: number; col
   'long-break':  { label: 'Descanso largo', duration: 15 * 60, color: 'var(--accent-purple)' },
 }
 
-type RightTab = 'focus' | 'stats'
-
 export default function RightPanel() {
-  const [tab, setTab] = useState<RightTab>('focus')
+  const [tab, setTab] = useState<RightTab>('music')
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -24,6 +25,7 @@ export default function RightPanel() {
         style={{ borderBottom: '1px solid var(--border)' }}
       >
         {([
+          { id: 'music', label: '♪ Música' },
           { id: 'focus', label: 'Foco' },
           { id: 'stats', label: 'Stats' },
         ] as { id: RightTab; label: string }[]).map((t) => (
@@ -47,11 +49,170 @@ export default function RightPanel() {
 
       <div className="flex-1 overflow-y-auto">
         <AnimatePresence mode="wait">
+          {tab === 'music' && <MusicTab key="music" />}
           {tab === 'focus' && <FocusTab key="focus" />}
           {tab === 'stats' && <StatsTab key="stats" />}
         </AnimatePresence>
       </div>
     </div>
+  )
+}
+
+/* ── Music Player ───────────────────────────────── */
+function MusicTab() {
+  const { activeDocument } = useEditorStore()
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [playing, setPlaying] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [loop, setLoop] = useState(false)
+
+  const songUrl = activeDocument?.songUrl ?? null
+  const songTitle = activeDocument?.songTitle ?? null
+
+  // Reset player when song changes
+  useEffect(() => {
+    setPlaying(false)
+    setCurrentTime(0)
+    setDuration(0)
+  }, [songUrl])
+
+  const togglePlay = () => {
+    if (!audioRef.current || !songUrl) return
+    if (playing) {
+      audioRef.current.pause()
+      setPlaying(false)
+    } else {
+      audioRef.current.play()
+      setPlaying(true)
+    }
+  }
+
+  const fmt = (s: number) => {
+    if (!isFinite(s)) return '0:00'
+    const m = Math.floor(s / 60)
+    const sec = Math.floor(s % 60)
+    return `${m}:${sec.toString().padStart(2, '0')}`
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="flex flex-col gap-5 p-4"
+    >
+      {songUrl ? (
+        <>
+          <audio
+            key={songUrl}
+            ref={audioRef}
+            src={songUrl}
+            loop={loop}
+            onTimeUpdate={() => audioRef.current && setCurrentTime(audioRef.current.currentTime)}
+            onLoadedMetadata={() => audioRef.current && setDuration(audioRef.current.duration)}
+            onEnded={() => { setPlaying(false); setCurrentTime(0) }}
+          />
+
+          {/* Song info */}
+          <div
+            className="rounded-xl p-4 flex flex-col items-center gap-1 text-center"
+            style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}
+          >
+            <div
+              className="w-12 h-12 rounded-full flex items-center justify-center mb-2"
+              style={{ background: 'var(--bg-active)', fontSize: '22px' }}
+            >
+              {playing ? '♫' : '♪'}
+            </div>
+            <p
+              className="font-serif font-semibold text-sm leading-snug"
+              style={{ color: 'var(--text)' }}
+            >
+              {songTitle}
+            </p>
+            {activeDocument?.title && activeDocument.title !== songTitle && (
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                {activeDocument.title}
+              </p>
+            )}
+          </div>
+
+          {/* Progress */}
+          <div className="flex flex-col gap-1.5">
+            <input
+              type="range"
+              min={0}
+              max={duration || 0}
+              step={0.1}
+              value={currentTime}
+              onChange={(e) => {
+                const t = parseFloat(e.target.value)
+                if (audioRef.current) audioRef.current.currentTime = t
+                setCurrentTime(t)
+              }}
+              className="w-full accent-[var(--accent)]"
+              style={{ accentColor: 'var(--accent)' }}
+            />
+            <div className="flex justify-between font-mono text-xs" style={{ color: 'var(--text-muted)' }}>
+              <span>{fmt(currentTime)}</span>
+              <span>{fmt(duration)}</span>
+            </div>
+          </div>
+
+          {/* Controls */}
+          <div className="flex items-center justify-center gap-4">
+            <button
+              onClick={() => setLoop((l) => !l)}
+              className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
+              style={{
+                background: loop ? 'var(--bg-active)' : 'var(--bg)',
+                border: `1px solid ${loop ? 'var(--accent)' : 'var(--border)'}`,
+                color: loop ? 'var(--accent)' : 'var(--text-muted)',
+                fontSize: '12px',
+              }}
+              title="Repetir"
+            >
+              ↺
+            </button>
+            <button
+              onClick={togglePlay}
+              className="w-12 h-12 rounded-full flex items-center justify-center font-bold transition-all"
+              style={{
+                background: playing ? 'var(--bg-active)' : 'var(--accent)',
+                color: playing ? 'var(--accent)' : 'var(--bg)',
+                border: playing ? '1px solid var(--accent)' : 'none',
+                fontSize: playing ? '14px' : '16px',
+              }}
+            >
+              {playing ? '⏸' : '▶'}
+            </button>
+            <button
+              onClick={() => {
+                if (audioRef.current) { audioRef.current.currentTime = 0; setCurrentTime(0) }
+              }}
+              className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
+              style={{
+                background: 'var(--bg)',
+                border: '1px solid var(--border)',
+                color: 'var(--text-muted)',
+                fontSize: '11px',
+              }}
+              title="Reiniciar"
+            >
+              ⏮
+            </button>
+          </div>
+        </>
+      ) : (
+        <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
+          <span style={{ fontSize: '32px', opacity: 0.3 }}>♪</span>
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            Selecciona un capítulo<br />para escuchar su canción
+          </p>
+        </div>
+      )}
+    </motion.div>
   )
 }
 

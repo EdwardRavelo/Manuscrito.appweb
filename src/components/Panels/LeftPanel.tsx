@@ -312,12 +312,22 @@ function DocItem({
       <span style={{ fontSize: '9px', color: isActive ? (doc.cardColor ?? iconColor) : 'var(--text-muted)', flexShrink: 0 }}>
         {icon}
       </span>
-      <span
-        className="flex-1 text-xs truncate leading-snug"
-        style={{ color: isActive ? 'var(--text)' : 'var(--text-mid)' }}
-      >
-        {doc.title}
-      </span>
+      <div className="flex-1 min-w-0">
+        <span
+          className="text-xs truncate leading-snug block"
+          style={{ color: isActive ? 'var(--text)' : 'var(--text-mid)' }}
+        >
+          {doc.title}
+        </span>
+        {doc.songTitle && (
+          <span
+            className="truncate block leading-tight"
+            style={{ fontSize: '10px', color: 'var(--text-muted)' }}
+          >
+            ♪ {doc.songTitle}
+          </span>
+        )}
+      </div>
       {doc.cardColor && (
         <span
           className="w-1.5 h-1.5 rounded-full flex-shrink-0 opacity-50 group-hover:opacity-100 transition-opacity"

@@ -29,6 +29,8 @@ function mapDocument(row: any): Document {
     tags: row.tags ?? [],
     cardColor: row.card_color,
     marginComments: row.margin_comments ?? [],
+    songUrl: row.song_url ?? undefined,
+    songTitle: row.song_title ?? undefined,
     createdAt: new Date(row.created_at).getTime(),
     updatedAt: new Date(row.updated_at).getTime(),
   }
@@ -126,6 +128,8 @@ export async function createDocument(
       status:     data.status,
       tags:       data.tags,
       user_id:    userId,
+      song_url:   data.songUrl,
+      song_title: data.songTitle,
     })
     .select()
     .single()
@@ -143,6 +147,8 @@ export async function updateDocument(id: string, data: Partial<Document>): Promi
   if (data.tags            !== undefined) patch.tags             = data.tags
   if (data.cardColor       !== undefined) patch.card_color       = data.cardColor
   if (data.marginComments  !== undefined) patch.margin_comments  = data.marginComments
+  if (data.songUrl         !== undefined) patch.song_url         = data.songUrl
+  if (data.songTitle       !== undefined) patch.song_title       = data.songTitle
   const { error } = await supabase.from('documents').update(patch).eq('id', id)
   if (error) throw error
 }

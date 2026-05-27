@@ -31,6 +31,8 @@ export interface Document {
   tags: string[]
   cardColor?: string
   marginComments?: MarginComment[]
+  songUrl?: string
+  songTitle?: string
   createdAt: number
   updatedAt: number
 }
